@@ -1,1 +1,1706 @@
-# site2
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBER-CS // Department of Future Computing & Creative Tech</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js WebGL Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Google Fonts: Syne, Space Grotesk, Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Tailwind Custom Funky Neon Theme -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        display: ['Syne', 'Space Grotesk', 'sans-serif'],
+                        grotesk: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: '#080710',
+                        void: '#110d24',
+                        neon: {
+                            lime: '#ccff00',
+                            cyan: '#00f5d4',
+                            pink: '#ff007f',
+                            orange: '#ff6b00',
+                            purple: '#9b5de5',
+                        }
+                    },
+                    animation: {
+                        'marquee': 'marquee 26s linear infinite',
+                        'float-slow': 'floatSlow 6s ease-in-out infinite',
+                        'spin-slow': 'spin 18s linear infinite',
+                    },
+                    keyframes: {
+                        marquee: {
+                            '0%': { transform: 'translateX(0%)' },
+                            '100%': { transform: 'translateX(-50%)' },
+                        },
+                        floatSlow: {
+                            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-12px) rotate(2deg)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --neon-lime: #ccff00;
+            --neon-cyan: #00f5d4;
+            --neon-pink: #ff007f;
+            --neon-orange: #ff6b00;
+        }
+
+        body {
+            background-color: #080710;
+            color: #f8fafc;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Magnetic Custom Cursor Glow (Desktop) */
+        #cursor-glow {
+            position: fixed;
+            width: 360px;
+            height: 360px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(204,255,0,0.13) 0%, rgba(0,245,212,0.07) 40%, rgba(255,0,127,0) 70%);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+            transition: width 0.3s ease, height 0.3s ease;
+        }
+
+        /* 3D Perspective Containers */
+        .perspective-stage {
+            perspective: 1400px;
+        }
+
+        /* True 3D Tilt Faculty Card */
+        .tilt-card {
+            transform-style: preserve-3d;
+            transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+            will-change: transform;
+            position: relative;
+        }
+
+        .tilt-card.resetting {
+            transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .tilt-layer-1 {
+            transform: translateZ(24px);
+        }
+
+        .tilt-layer-2 {
+            transform: translateZ(45px);
+        }
+
+        .tilt-layer-3 {
+            transform: translateZ(65px);
+        }
+
+        /* Holographic Glare Overlay on Tilt */
+        .holo-glare {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            background: radial-gradient(circle at var(--glare-x, 50%) var(--glare-y, 50%), rgba(255, 255, 255, 0.25) 0%, rgba(0, 245, 212, 0.12) 30%, transparent 70%);
+            mix-blend-mode: overlay;
+            z-index: 20;
+        }
+
+        .tilt-card:hover .holo-glare {
+            opacity: 1;
+        }
+
+        /* 3D Orbit Carousel Stage */
+        .orbit-viewport {
+            perspective: 1600px;
+            height: 520px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+            user-select: none;
+        }
+
+        .orbit-ring {
+            width: 300px;
+            height: 430px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .orbit-item {
+            position: absolute;
+            inset: 0;
+            backface-visibility: visible;
+            transition: opacity 0.5s ease, filter 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        /* Scroll 3D Flip/Rise Reveals */
+        .reveal-3d {
+            opacity: 0;
+            transform: perspective(1000px) rotateX(14deg) translateY(40px) scale(0.96);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: opacity, transform;
+        }
+
+        .reveal-3d.active {
+            opacity: 1;
+            transform: perspective(1000px) rotateX(0deg) translateY(0) scale(1);
+        }
+
+        /* Neo-Brutalist Hard Neon Shadows */
+        .neo-shadow-lime {
+            box-shadow: 6px 6px 0px #ccff00;
+        }
+        .neo-shadow-lime:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 9px 9px 0px #ccff00;
+        }
+
+        .neo-shadow-cyan {
+            box-shadow: 6px 6px 0px #00f5d4;
+        }
+
+        .neo-shadow-pink {
+            box-shadow: 6px 6px 0px #ff007f;
+        }
+
+        /* Glassmorphism Dark Surface */
+        .cyber-glass {
+            background: rgba(17, 13, 36, 0.72);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        /* Spring Modal Transitions */
+        .modal-backdrop {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease;
+        }
+
+        .modal-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-panel {
+            opacity: 0;
+            transform: perspective(1000px) rotateX(-12deg) scale(0.9) translateY(24px);
+            transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-backdrop.open .modal-panel {
+            opacity: 1;
+            transform: perspective(1000px) rotateX(0deg) scale(1) translateY(0);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #080710;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2b244d;
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ccff00;
+        }
+
+        /* Particle Burst Canvas */
+        #confetti-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-neon-lime selection:text-obsidian">
+
+    <!-- Ambient Cursor Glow -->
+    <div id="cursor-glow" class="hidden lg:block"></div>
+
+    <!-- Celebration Particle Burst Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Floating Cyber-Glass Navigation -->
+    <header class="fixed top-4 inset-x-0 z-40 px-4 sm:px-6">
+        <div class="max-w-7xl mx-auto cyber-glass rounded-2xl px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between shadow-2xl">
+            <!-- Brand Logo -->
+            <a href="#" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-neon-lime text-obsidian flex items-center justify-center font-display font-extrabold text-xl rotate-[-4deg] group-hover:rotate-6 transition-transform duration-300 shadow-[3px_3px_0px_#ff007f]">
+                    3D
+                </div>
+                <div>
+                    <span class="font-display font-extrabold text-white text-base sm:text-lg tracking-tight block leading-none">NEXUS<span class="text-neon-lime">.CS</span></span>
+                    <span class="font-mono text-[10px] text-neon-cyan tracking-widest uppercase mt-1 block">1 HOD • 4 PROFESSORS</span>
+                </div>
+            </a>
+
+            <!-- Desktop Navigation -->
+            <nav class="hidden md:flex items-center gap-7">
+                <a href="#hod-stage" class="font-mono text-xs uppercase tracking-wider text-slate-300 hover:text-neon-lime transition-colors">// HOD_COMMAND</a>
+                <a href="#faculty-universe" class="font-mono text-xs uppercase tracking-wider text-slate-300 hover:text-neon-cyan transition-colors">// 3D_FACULTY_CREW</a>
+                <a href="#live-timetable" class="font-mono text-xs uppercase tracking-wider text-slate-300 hover:text-neon-pink transition-colors">// LIVE_CLASSES</a>
+                <button onclick="openBookingModal()" class="px-5 py-2.5 rounded-xl bg-neon-lime text-obsidian font-display font-bold text-xs uppercase tracking-wider neo-shadow-lime transition-all flex items-center gap-2">
+                    <i class="ph-bold ph-lightning text-base"></i>
+                    <span>Book 1:1 Session</span>
+                </button>
+            </nav>
+
+            <!-- Mobile Drawer Button -->
+            <button id="mobile-menu-toggle" aria-label="Open menu" class="md:hidden p-2.5 rounded-xl bg-white/10 text-neon-lime hover:bg-white/20 transition-colors">
+                <i class="ph-bold ph-list text-2xl"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Dropdown -->
+        <div id="mobile-drawer" class="hidden md:hidden max-w-7xl mx-auto mt-2 cyber-glass rounded-2xl p-4 space-y-2 border border-neon-lime/30">
+            <a href="#hod-stage" class="mobile-link block px-4 py-3 rounded-xl font-mono text-xs uppercase text-slate-200 hover:bg-white/10 hover:text-neon-lime">// 01. HOD Command Stage</a>
+            <a href="#faculty-universe" class="mobile-link block px-4 py-3 rounded-xl font-mono text-xs uppercase text-slate-200 hover:bg-white/10 hover:text-neon-cyan">// 02. 3D Faculty Crew (1 + 4)</a>
+            <a href="#live-timetable" class="mobile-link block px-4 py-3 rounded-xl font-mono text-xs uppercase text-slate-200 hover:bg-white/10 hover:text-neon-pink">// 03. Live Class Timetable</a>
+            <button onclick="openBookingModal()" class="w-full py-3 rounded-xl bg-neon-lime text-obsidian font-display font-extrabold text-xs uppercase tracking-wider">
+                Book 1:1 Faculty Session
+            </button>
+        </div>
+    </header>
+
+    <!-- HERO SECTION: Interactive Three.js 3D WebGL Floating Academic Universe -->
+    <section class="relative min-h-screen flex items-center pt-28 pb-16 overflow-hidden">
+        <!-- Three.js Full-Bleed Interactive 3D Canvas -->
+        <div id="three-hero-container" class="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"></div>
+
+        <!-- Radial Vignette for Crisp Typography Readability -->
+        <div class="absolute inset-0 bg-gradient-to-b from-obsidian/40 via-obsidian/55 to-obsidian pointer-events-none z-[1]"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                <!-- Left Kinetic Typography & Controls -->
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-neon-cyan/40 text-neon-cyan font-mono text-xs uppercase tracking-wider">
+                        <span class="w-2.5 h-2.5 rounded-full bg-neon-lime animate-ping"></span>
+                        INTERACTIVE 3D TEACHING LAB • COHORT 2026
+                    </div>
+
+                    <h1 class="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.03] text-white">
+                        LEARN IN <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-neon-lime via-neon-cyan to-neon-pink">HYPER-3D</span> <br>
+                        DIMENSION.
+                    </h1>
+
+                    <p class="text-slate-300 text-base sm:text-xl max-w-xl leading-relaxed">
+                        Commanded by <strong class="text-neon-lime">1 visionary Head of Department</strong> and <strong class="text-neon-cyan">4 rebel-genius professors</strong>. Drag the 3D universe, orbit our faculty cards, and jump into live interactive labs.
+                    </p>
+
+                    <div class="flex flex-wrap items-center gap-4 pt-2">
+                        <a href="#faculty-universe" class="px-7 py-4 rounded-2xl bg-neon-lime text-obsidian font-display font-extrabold text-sm uppercase tracking-wider neo-shadow-lime transition-all flex items-center gap-2.5">
+                            <span>Meet The 5 Educators</span>
+                            <i class="ph-bold ph-cube text-lg"></i>
+                        </a>
+
+                        <button id="boost-3d-btn" onclick="triggerThreeDBurst()" class="px-6 py-4 rounded-2xl cyber-glass hover:border-neon-pink text-white font-mono text-xs uppercase tracking-wider transition-all flex items-center gap-2.5 group">
+                            <i class="ph-fill ph-sparkle text-neon-pink text-lg group-hover:rotate-45 transition-transform"></i>
+                            <span>Warp 3D Universe</span>
+                        </button>
+                    </div>
+
+                    <!-- Interactive 3D Hint Pill -->
+                    <div class="flex items-center gap-3 text-xs font-mono text-slate-400 pt-2">
+                        <span class="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-neon-cyan">DRAG / MOVE MOUSE</span>
+                        <span>to tilt 3D polyhedra • Click background for energy pulse</span>
+                    </div>
+                </div>
+
+                <!-- Right Floating 3D Quick-Stat HUD Cards -->
+                <div class="lg:col-span-5 grid grid-cols-2 gap-4 perspective-stage">
+                    <div class="tilt-card cyber-glass rounded-3xl p-6 border-neon-lime/30">
+                        <div class="holo-glare"></div>
+                        <div class="tilt-layer-2">
+                            <span class="font-mono text-xs text-neon-lime uppercase">// COMMAND</span>
+                            <div class="font-display text-4xl sm:text-5xl font-extrabold text-white mt-2">01</div>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-1 font-medium">Head of Department</p>
+                        </div>
+                    </div>
+
+                    <div class="tilt-card cyber-glass rounded-3xl p-6 border-neon-cyan/30 mt-6">
+                        <div class="holo-glare"></div>
+                        <div class="tilt-layer-2">
+                            <span class="font-mono text-xs text-neon-cyan uppercase">// MENTORS</span>
+                            <div class="font-display text-4xl sm:text-5xl font-extrabold text-white mt-2">04</div>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-1 font-medium">Specialized Professors</p>
+                        </div>
+                    </div>
+
+                    <div class="tilt-card cyber-glass rounded-3xl p-6 border-neon-pink/30">
+                        <div class="holo-glare"></div>
+                        <div class="tilt-layer-2">
+                            <span class="font-mono text-xs text-neon-pink uppercase">// STUDIOS</span>
+                            <div class="font-display text-4xl sm:text-5xl font-extrabold text-white mt-2">10</div>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-1 font-medium">Hands-On 3D & AI Labs</p>
+                        </div>
+                    </div>
+
+                    <div class="tilt-card cyber-glass rounded-3xl p-6 border-neon-orange/30 mt-6">
+                        <div class="holo-glare"></div>
+                        <div class="tilt-layer-2">
+                            <span class="font-mono text-xs text-neon-orange uppercase">// RATIO</span>
+                            <div class="font-display text-4xl sm:text-5xl font-extrabold text-white mt-2">15:1</div>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-1 font-medium">Ultra-Tight Mentorship</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Kinetic Neon Marquee Ticker -->
+    <div class="bg-neon-lime text-obsidian py-3.5 border-y-2 border-obsidian overflow-hidden select-none relative z-20">
+        <div class="flex whitespace-nowrap animate-marquee font-display font-extrabold text-sm sm:text-base uppercase tracking-wider">
+            <span class="mx-6">★ HEAD OF DEPARTMENT: PROF. DR. ELEANOR VANCE</span>
+            <span class="mx-6">✦ CYBERSECURITY: DR. MARCUS THORNE</span>
+            <span class="mx-6">★ GENERATIVE AI: DR. PRIYA NAIR</span>
+            <span class="mx-6">✦ 3D WEBGL & CREATIVE CODING: PROF. DAVID OKAFOR</span>
+            <span class="mx-6">★ SPATIAL UX & HCI: DR. CLAIRE LIN</span>
+            <span class="mx-6">★ HEAD OF DEPARTMENT: PROF. DR. ELEANOR VANCE</span>
+            <span class="mx-6">✦ CYBERSECURITY: DR. MARCUS THORNE</span>
+            <span class="mx-6">★ GENERATIVE AI: DR. PRIYA NAIR</span>
+            <span class="mx-6">✦ 3D WEBGL & CREATIVE CODING: PROF. DAVID OKAFOR</span>
+            <span class="mx-6">★ SPATIAL UX & HCI: DR. CLAIRE LIN</span>
+        </div>
+    </div>
+
+    <!-- HEAD OF DEPARTMENT (HOD) 3D HOLOGRAPHIC SPOTLIGHT STAGE -->
+    <section id="hod-stage" class="py-24 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 reveal-3d">
+                <div>
+                    <span class="font-mono text-xs uppercase tracking-widest text-neon-lime block mb-2">// 01. DEPARTMENTAL COMMANDER</span>
+                    <h2 class="font-display text-3xl sm:text-5xl font-extrabold text-white">Head of Department</h2>
+                </div>
+                <p class="text-slate-400 font-mono text-xs sm:text-sm max-w-md mt-3 md:mt-0">
+                    Hover over the HOD card to engage 3D holographic perspective & inspect leadership credentials.
+                </p>
+            </div>
+
+            <!-- Interactive 3D Tilt HOD Showcase Card -->
+            <div class="perspective-stage reveal-3d">
+                <div class="tilt-card rounded-[2rem] bg-gradient-to-br from-[#191236] via-[#110d24] to-[#1e1035] border-2 border-neon-lime/60 p-6 sm:p-10 lg:p-12 shadow-[0_25px_70px_-15px_rgba(204,255,0,0.18)]">
+                    <div class="holo-glare"></div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                        <!-- 3D Pop-Out Illustrated Avatar Frame -->
+                        <div class="lg:col-span-5 tilt-layer-2">
+                            <div class="relative rounded-3xl overflow-hidden bg-gradient-to-tr from-neon-pink via-neon-purple to-neon-cyan p-1 shadow-2xl">
+                                <div class="bg-obsidian rounded-[1.35rem] overflow-hidden relative aspect-[4/4.3]">
+                                    <img 
+                                        src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=900&q=85" 
+                                        onerror="this.onerror=null;this.src='https://placehold.co/700x750/110d24/ccff00?text=PROF.+DR.+ELEANOR+VANCE+(HOD)';"
+                                        alt="Prof. Dr. Eleanor Vance - Head of Department"
+                                        class="w-full h-full object-cover object-top"
+                                    >
+                                    <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-transparent"></div>
+                                    
+                                    <!-- Floating 3D Crown Badge -->
+                                    <div class="absolute top-4 left-4 px-4 py-1.5 rounded-xl bg-neon-lime text-obsidian font-display font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-[4px_4px_0px_#080710]">
+                                        <i class="ph-fill ph-crown text-base"></i> HEAD OF DEPARTMENT
+                                    </div>
+
+                                    <div class="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                                        <span class="px-3 py-1 rounded-lg bg-obsidian/80 backdrop-blur-md border border-white/15 font-mono text-xs text-neon-cyan">
+                                            EXP: 18+ YRS
+                                        </span>
+                                        <span class="px-3 py-1 rounded-lg bg-obsidian/80 backdrop-blur-md border border-white/15 font-mono text-xs text-neon-pink">
+                                            MIT PH.D.
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- HOD Content & Interactive Actions -->
+                        <div class="lg:col-span-7 space-y-6 tilt-layer-1">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <span class="px-3 py-1 rounded-full bg-neon-pink/20 border border-neon-pink/50 text-neon-pink font-mono text-xs font-bold">
+                                    CHAIR OF FUTURE COMPUTING
+                                </span>
+                                <span class="px-3 py-1 rounded-full bg-neon-cyan/15 border border-neon-cyan/40 text-neon-cyan font-mono text-xs">
+                                    IEEE SENIOR FELLOW
+                                </span>
+                            </div>
+
+                            <h3 class="font-display text-3xl sm:text-5xl font-extrabold text-white leading-tight">
+                                Prof. Dr. Eleanor Vance
+                            </h3>
+
+                            <p class="text-slate-200 text-base sm:text-lg leading-relaxed border-l-4 border-neon-lime pl-5 italic">
+                                “We don’t build passive coders—we train fearless creative technologists. Alongside our four powerhouse professors, every lecture is an interactive playground where theory collides with real-world invention.”
+                            </p>
+
+                            <!-- Telemetry Grid -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                                <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+                                    <span class="font-mono text-[11px] text-neon-lime uppercase block">CORE DOMAIN</span>
+                                    <span class="font-bold text-sm text-white mt-1 block">Neuro-Symbolic AI & Ethics</span>
+                                </div>
+                                <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+                                    <span class="font-mono text-[11px] text-neon-cyan uppercase block">HOD OFFICE HOURS</span>
+                                    <span class="font-bold text-sm text-white mt-1 block">Tue & Thu • 2:00–4:30 PM</span>
+                                </div>
+                                <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+                                    <span class="font-mono text-[11px] text-neon-pink uppercase block">COMMAND HQ</span>
+                                    <span class="font-bold text-sm text-white mt-1 block">Turing Spire, Suite 401</span>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex flex-wrap items-center gap-4 pt-3 tilt-layer-3">
+                                <button onclick="openFacultyModal('hod-vance')" class="px-6 py-3.5 rounded-xl bg-neon-lime text-obsidian font-display font-extrabold text-xs sm:text-sm uppercase tracking-wider neo-shadow-lime transition-all flex items-center gap-2">
+                                    <span>Open Full HOD Dossier</span>
+                                    <i class="ph-bold ph-arrow-up-right text-base"></i>
+                                </button>
+                                <button onclick="openBookingModal('Prof. Dr. Eleanor Vance (HOD)')" class="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-mono text-xs uppercase tracking-wider transition-all flex items-center gap-2">
+                                    <i class="ph-bold ph-calendar-plus text-neon-cyan text-base"></i>
+                                    <span>Book HOD Mentorship</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3D FACULTY UNIVERSE: 1 HOD + 4 TEACHERS (TILT GRID + 3D ORBIT CAROUSEL MODE) -->
+    <section id="faculty-universe" class="py-24 relative bg-void/60 border-y border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header & View Mode Switcher -->
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10 reveal-3d">
+                <div>
+                    <span class="font-mono text-xs uppercase tracking-widest text-neon-cyan block mb-2">// 02. THE TEACHING SQUAD (1 HOD + 4 TEACHERS)</span>
+                    <h2 class="font-display text-3xl sm:text-5xl font-extrabold text-white">3D Faculty Roster</h2>
+                </div>
+
+                <!-- Interactive View Switcher: 3D Tilt Grid vs 3D Orbit Stage -->
+                <div class="inline-flex p-1.5 rounded-2xl bg-obsidian border border-white/15 self-start lg:self-auto">
+                    <button id="btn-view-grid" onclick="switchFacultyView('grid')" class="px-4 py-2.5 rounded-xl bg-neon-cyan text-obsidian font-display font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2">
+                        <i class="ph-bold ph-squares-four text-base"></i>
+                        <span>3D Tilt Grid</span>
+                    </button>
+                    <button id="btn-view-orbit" onclick="switchFacultyView('orbit')" class="px-4 py-2.5 rounded-xl text-slate-300 hover:text-white font-display font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2">
+                        <i class="ph-bold ph-planet text-base text-neon-pink"></i>
+                        <span>3D Orbit Stage</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Filter & Live Search Toolbar -->
+            <div id="grid-controls" class="cyber-glass rounded-2xl p-3 sm:p-4 mb-10 flex flex-col lg:flex-row items-center justify-between gap-4 reveal-3d">
+                <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2 w-full lg:w-auto">
+                    <button data-filter="all" class="filter-pill active px-4 py-2 rounded-xl font-mono text-xs font-bold uppercase bg-neon-lime text-obsidian transition-all">
+                        All Crew (5)
+                    </button>
+                    <button data-filter="hod" class="filter-pill px-4 py-2 rounded-xl font-mono text-xs uppercase text-slate-300 hover:bg-white/10 transition-all">
+                        HOD (1)
+                    </button>
+                    <button data-filter="teachers" class="filter-pill px-4 py-2 rounded-xl font-mono text-xs uppercase text-slate-300 hover:bg-white/10 transition-all">
+                        Teachers (4)
+                    </button>
+                    <button data-filter="ai" class="filter-pill px-4 py-2 rounded-xl font-mono text-xs uppercase text-slate-300 hover:bg-white/10 transition-all">
+                        AI & Neural
+                    </button>
+                    <button data-filter="cyber" class="filter-pill px-4 py-2 rounded-xl font-mono text-xs uppercase text-slate-300 hover:bg-white/10 transition-all">
+                        Cyber & Systems
+                    </button>
+                    <button data-filter="3d-ux" class="filter-pill px-4 py-2 rounded-xl font-mono text-xs uppercase text-slate-300 hover:bg-white/10 transition-all">
+                        3D WebGL & UX
+                    </button>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="relative w-full lg:w-72">
+                    <i class="ph-bold ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-neon-cyan"></i>
+                    <input 
+                        type="text" 
+                        id="faculty-search-input" 
+                        placeholder="Search professor or subject..." 
+                        class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-obsidian/90 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-neon-lime transition-colors"
+                    >
+                </div>
+            </div>
+
+            <!-- MODE A: 3D TILT GRID VIEW -->
+            <div id="faculty-grid-view" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 perspective-stage">
+                <!-- Populated dynamically via JS -->
+            </div>
+
+            <!-- Empty Search State -->
+            <div id="no-results-box" class="hidden text-center py-16 cyber-glass rounded-3xl">
+                <i class="ph-duotone ph-alien text-5xl text-neon-pink mb-3 block"></i>
+                <h3 class="font-display text-xl font-bold text-white">No Faculty Matched Your Signal</h3>
+                <p class="text-slate-400 text-sm mt-1 mb-5">Reset your filters to bring all 5 educators back into orbit.</p>
+                <button onclick="resetAllFilters()" class="px-5 py-2.5 rounded-xl bg-neon-cyan text-obsidian font-display font-bold text-xs uppercase">
+                    Reset Filters
+                </button>
+            </div>
+
+            <!-- MODE B: INTERACTIVE 3D ORBIT CAROUSEL STAGE -->
+            <div id="faculty-orbit-view" class="hidden py-8">
+                <div class="text-center mb-4">
+                    <span class="px-3.5 py-1 rounded-full bg-neon-pink/20 border border-neon-pink/40 text-neon-pink font-mono text-xs">
+                        DRAG LEFT/RIGHT OR USE CONTROLS TO ROTATE 3D RING
+                    </span>
+                </div>
+
+                <div id="orbit-viewport" class="orbit-viewport cursor-grab active:cursor-grabbing">
+                    <div id="orbit-ring" class="orbit-ring">
+                        <!-- 5 3D Orbit Cards injected dynamically -->
+                    </div>
+                </div>
+
+                <!-- Orbit Stage Controls -->
+                <div class="flex items-center justify-center gap-4 mt-8">
+                    <button onclick="rotateOrbit(-1)" class="w-12 h-12 rounded-2xl cyber-glass hover:border-neon-lime text-white flex items-center justify-center transition-all hover:scale-105" aria-label="Previous Educator">
+                        <i class="ph-bold ph-caret-left text-xl text-neon-lime"></i>
+                    </button>
+                    <div id="orbit-active-label" class="px-6 py-3 rounded-2xl cyber-glass border-neon-cyan/40 text-center min-w-[240px]">
+                        <span class="font-mono text-[10px] text-neon-cyan uppercase block">CENTER STAGE</span>
+                        <span id="orbit-center-name" class="font-display font-bold text-white text-sm sm:text-base">Prof. Dr. Eleanor Vance</span>
+                    </div>
+                    <button onclick="rotateOrbit(1)" class="w-12 h-12 rounded-2xl cyber-glass hover:border-neon-lime text-white flex items-center justify-center transition-all hover:scale-105" aria-label="Next Educator">
+                        <i class="ph-bold ph-caret-right text-xl text-neon-lime"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LIVE INTERACTIVE CLASS TIMETABLE -->
+    <section id="live-timetable" class="py-24 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12 reveal-3d">
+                <div>
+                    <span class="font-mono text-xs uppercase tracking-widest text-neon-pink block mb-2">// 03. LIVE STUDIO SCHEDULE</span>
+                    <h2 class="font-display text-3xl sm:text-5xl font-extrabold text-white">Weekly Labs & Lectures</h2>
+                </div>
+
+                <!-- Day Filter Pills -->
+                <div class="inline-flex flex-wrap gap-2 bg-void p-2 rounded-2xl border border-white/10">
+                    <button onclick="filterSchedule('all')" data-day="all" class="sched-btn active px-4 py-2 rounded-xl font-mono text-xs font-bold uppercase bg-neon-pink text-white transition-all">All Sessions</button>
+                    <button onclick="filterSchedule('Mon / Wed')" data-day="Mon / Wed" class="sched-btn px-4 py-2 rounded-xl font-mono text-xs uppercase text-slate-300 hover:text-white transition-all">Mon / Wed</button>
+                    <button onclick="filterSchedule('Tue / Thu')" data-day="Tue / Thu" class="sched-btn px-4 py-2 rounded-xl font-mono text-xs uppercase text-slate-300 hover:text-white transition-all">Tue / Thu</button>
+                    <button onclick="filterSchedule('Friday')" data-day="Friday" class="sched-btn px-4 py-2 rounded-xl font-mono text-xs uppercase text-slate-300 hover:text-white transition-all">Friday Labs</button>
+                </div>
+            </div>
+
+            <div id="schedule-list" class="space-y-4 reveal-3d">
+                <!-- Schedule rows dynamically rendered -->
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-obsidian border-t border-white/10 py-14">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-neon-lime text-obsidian flex items-center justify-center font-display font-extrabold text-lg">
+                    3D
+                </div>
+                <div>
+                    <span class="font-display font-extrabold text-white text-base block">NEXUS.CS DEPARTMENT</span>
+                    <span class="font-mono text-xs text-slate-400">1 Head of Department • 4 Specialized Teachers</span>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-4 text-xs font-mono text-slate-400">
+                <button onclick="openFacultyModal('hod-vance')" class="hover:text-neon-lime transition-colors">Dr. Vance (HOD)</button>
+                <span>•</span>
+                <button onclick="openFacultyModal('prof-marcus')" class="hover:text-neon-cyan transition-colors">Dr. Thorne</button>
+                <span>•</span>
+                <button onclick="openFacultyModal('prof-priya')" class="hover:text-neon-pink transition-colors">Dr. Nair</button>
+                <span>•</span>
+                <button onclick="openFacultyModal('prof-david')" class="hover:text-neon-orange transition-colors">Prof. Okafor</button>
+                <span>•</span>
+                <button onclick="openFacultyModal('prof-claire')" class="hover:text-neon-lime transition-colors">Dr. Lin</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 3D SPRING FACULTY DOSSIER MODAL -->
+    <div id="faculty-modal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/80 backdrop-blur-md" role="dialog" aria-modal="true">
+        <div class="modal-panel cyber-glass w-full max-w-3xl max-h-[90vh] rounded-3xl overflow-hidden flex flex-col border-2 border-neon-cyan/40 shadow-[0_0_60px_rgba(0,245,212,0.2)]">
+            <!-- Modal Banner -->
+            <div id="modal-banner" class="relative p-6 sm:p-8 bg-gradient-to-r from-[#1d1442] via-[#151030] to-[#261138] border-b border-white/10 shrink-0">
+                <button onclick="closeFacultyModal()" aria-label="Close" class="absolute top-5 right-5 w-10 h-10 rounded-xl bg-white/10 hover:bg-neon-pink hover:text-white text-slate-200 flex items-center justify-center transition-colors">
+                    <i class="ph-bold ph-x text-lg"></i>
+                </button>
+
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                    <img id="modal-img" src="" alt="" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-neon-lime shadow-lg shrink-0">
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            <span id="modal-badge" class="px-3 py-0.5 rounded-lg font-display font-extrabold text-xs uppercase tracking-wider"></span>
+                            <span id="modal-exp" class="px-3 py-0.5 rounded-lg bg-white/10 font-mono text-xs text-neon-cyan"></span>
+                        </div>
+                        <h3 id="modal-name" class="font-display text-2xl sm:text-3xl font-extrabold text-white"></h3>
+                        <p id="modal-creds" class="font-mono text-xs text-slate-300 mt-1"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 sm:p-8 overflow-y-auto space-y-6">
+                <div>
+                    <span class="font-mono text-xs text-neon-lime uppercase block mb-2">// TEACHING PHILOSOPHY & BIO</span>
+                    <p id="modal-bio" class="text-slate-200 text-sm sm:text-base leading-relaxed"></p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="p-4 rounded-2xl bg-obsidian/70 border border-white/10">
+                        <span class="font-mono text-[11px] text-neon-cyan uppercase block">OFFICE HOURS & STUDIO</span>
+                        <span id="modal-hours" class="font-bold text-sm text-white mt-1 block"></span>
+                        <span id="modal-room" class="font-mono text-xs text-slate-400 mt-0.5 block"></span>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-obsidian/70 border border-white/10">
+                        <span class="font-mono text-[11px] text-neon-pink uppercase block">DIRECT COMMS</span>
+                        <div class="flex items-center justify-between gap-2 mt-1">
+                            <span id="modal-email" class="font-mono text-xs sm:text-sm text-white truncate"></span>
+                            <button onclick="copyEmailAddress()" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-neon-lime hover:text-obsidian font-mono text-xs transition-colors">
+                                Copy
+                            </button>
+                        </div>
+                        <span id="email-copied-msg" class="font-mono text-[11px] text-neon-lime hidden mt-1 block">✓ Copied to clipboard!</span>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="font-mono text-xs text-neon-cyan uppercase block mb-3">// ACTIVE COURSES THIS SEMESTER</span>
+                    <div id="modal-courses" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                </div>
+
+                <div>
+                    <span class="font-mono text-xs text-neon-orange uppercase block mb-3">// LAB HIGHLIGHTS & HONORS</span>
+                    <ul id="modal-honors" class="space-y-2 text-sm text-slate-300"></ul>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-5 bg-obsidian/90 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                <button onclick="closeFacultyModal()" class="px-4 py-2.5 rounded-xl font-mono text-xs uppercase text-slate-400 hover:text-white transition-colors">
+                    Close Dossier
+                </button>
+                <button id="modal-book-trigger" class="px-6 py-3 rounded-xl bg-neon-lime text-obsidian font-display font-extrabold text-xs uppercase tracking-wider neo-shadow-lime transition-all flex items-center gap-2">
+                    <i class="ph-bold ph-lightning"></i>
+                    <span>Book 1:1 Office Hour</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1:1 SESSION BOOKING MODAL -->
+    <div id="booking-modal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian/80 backdrop-blur-md" role="dialog" aria-modal="true">
+        <div class="modal-panel cyber-glass w-full max-w-lg rounded-3xl overflow-hidden border-2 border-neon-lime/50 shadow-2xl">
+            <div class="p-6 bg-gradient-to-r from-[#1d1442] to-[#110d24] border-b border-white/10 flex items-center justify-between">
+                <div>
+                    <span class="font-mono text-[10px] text-neon-lime uppercase">INSTANT MENTORSHIP PASS</span>
+                    <h3 class="font-display text-xl font-extrabold text-white">Book 1:1 Faculty Session</h3>
+                </div>
+                <button onclick="closeBookingModal()" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-neon-pink text-white flex items-center justify-center transition-colors">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <form onsubmit="submitBookingForm(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="font-mono text-xs text-neon-cyan uppercase block mb-1.5">Choose Educator (1 HOD / 4 Teachers)</label>
+                    <select id="booking-select" class="w-full px-4 py-3 rounded-xl bg-obsidian border border-white/15 text-sm text-white focus:outline-none focus:border-neon-lime">
+                        <option value="Prof. Dr. Eleanor Vance (HOD)">Prof. Dr. Eleanor Vance — Head of Department</option>
+                        <option value="Dr. Marcus Thorne">Dr. Marcus Thorne — Cybersecurity & Ethical Hacking</option>
+                        <option value="Dr. Priya Nair">Dr. Priya Nair — Neural Networks & Generative AI</option>
+                        <option value="Prof. David Okafor">Prof. David Okafor — Creative Coding, WebGL & 3D</option>
+                        <option value="Dr. Claire Lin">Dr. Claire Lin — Human-AI Interaction & Spatial UX</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="font-mono text-xs text-slate-300 uppercase block mb-1.5">Your Name</label>
+                        <input type="text" id="booking-student" required placeholder="Nova Sterling" class="w-full px-4 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm text-white focus:outline-none focus:border-neon-lime">
+                    </div>
+                    <div>
+                        <label class="font-mono text-xs text-slate-300 uppercase block mb-1.5">Time Slot</label>
+                        <select id="booking-slot" class="w-full px-4 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm text-white focus:outline-none focus:border-neon-lime">
+                            <option>Tuesday • 2:30 PM</option>
+                            <option>Wednesday • 11:00 AM</option>
+                            <option>Thursday • 3:15 PM</option>
+                            <option>Friday • 1:30 PM</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="font-mono text-xs text-slate-300 uppercase block mb-1.5">Project / Syllabus Topic</label>
+                    <textarea id="booking-topic" rows="3" required placeholder="3D shader optimization, AI research guidance, or capstone review..." class="w-full px-4 py-2.5 rounded-xl bg-obsidian border border-white/15 text-sm text-white focus:outline-none focus:border-neon-lime"></textarea>
+                </div>
+
+                <div id="booking-success" class="hidden p-4 rounded-2xl bg-neon-lime/15 border border-neon-lime text-neon-lime text-xs font-mono">
+                    <strong class="block text-sm mb-1">⚡ PASS CONFIRMED!</strong>
+                    <span id="booking-success-detail"></span>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeBookingModal()" class="px-4 py-2.5 rounded-xl font-mono text-xs uppercase text-slate-400 hover:text-white">Cancel</button>
+                    <button type="submit" class="px-6 py-3 rounded-xl bg-neon-lime text-obsidian font-display font-extrabold text-xs uppercase tracking-wider neo-shadow-lime transition-all">
+                        Lock In Session
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APPLICATION SCRIPT: Three.js 3D Universe + 3D Tilt + 3D Orbit Carousel -->
+    <script>
+        /**
+         * 1. FACULTY ROSTER DATA: 1 Head of Department (HOD) + 4 Specialized Teachers
+         */
+        const facultyData = [
+            {
+                id: 'hod-vance',
+                name: 'Prof. Dr. Eleanor Vance',
+                role: 'Head of Department',
+                isHOD: true,
+                tag: 'ai',
+                accent: '#ccff00',
+                accentClass: 'neon-lime',
+                specialty: 'Neuro-Symbolic AI & Future Computing',
+                credentials: 'Ph.D. Computer Science, MIT • IEEE Fellow',
+                experience: '18+ Yrs Command',
+                image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=85',
+                fallback: 'https://placehold.co/600x650/110d24/ccff00?text=Dr.+Eleanor+Vance+(HOD)',
+                email: 'e.vance@nexus-cs.edu',
+                hours: 'Tue & Thu • 2:00 PM – 4:30 PM',
+                room: 'Turing Spire, Suite 401 (HOD HQ)',
+                bio: 'As Head of Department, Prof. Dr. Eleanor Vance leads curriculum innovation, research grants, and mentorship across all 5 faculty studios. Her courses unite deep cognitive architectures with real-time ethical AI deployment.',
+                courses: [
+                    { code: 'CS-401', title: 'Neuro-Symbolic AI & Autonomous Agents', time: 'Mon / Wed • 10:00 AM' },
+                    { code: 'CS-510', title: 'HOD Honors Research & Ethics Lab', time: 'Tue / Thu • 3:00 PM' }
+                ],
+                honors: [
+                    'National Excellence in Academic Innovation Award (2025)',
+                    'Principal Investigator of the $3.2M Spatial & AI Pedagogy Grant',
+                    'Author of 65+ peer-reviewed papers on interpretable neural systems'
+                ]
+            },
+            {
+                id: 'prof-marcus',
+                name: 'Dr. Marcus Thorne',
+                role: 'Professor • Cyber',
+                isHOD: false,
+                tag: 'cyber',
+                accent: '#00f5d4',
+                accentClass: 'neon-cyan',
+                specialty: 'Cybersecurity, Cryptography & Ethical Hacking',
+                credentials: 'Ph.D. Distributed Security, ETH Zurich',
+                experience: '12 Yrs Teaching',
+                image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=85',
+                fallback: 'https://placehold.co/600x650/110d24/00f5d4?text=Dr.+Marcus+Thorne',
+                email: 'm.thorne@nexus-cs.edu',
+                hours: 'Mon & Wed • 1:30 PM – 3:30 PM',
+                room: 'Cyber Bunker, Lab 312',
+                bio: 'Dr. Thorne turns low-level kernel security and zero-knowledge cryptography into high-stakes live Capture-The-Flag simulations. Students learn offense-informed defense inside isolated cyber ranges.',
+                courses: [
+                    { code: 'CS-204', title: 'Offensive Security & Capture-The-Flag Studio', time: 'Mon / Wed • 9:00 AM' },
+                    { code: 'CS-315', title: 'Zero-Knowledge Protocols & Distributed Systems', time: 'Tue / Thu • 11:00 AM' }
+                ],
+                honors: [
+                    '3x Student-Voted Distinguished Teaching Champion',
+                    'Coach of the DefCon Collegiate Cyber Defense Finalists',
+                    'Creator of the OpenKernel Visual Exploit Sandbox'
+                ]
+            },
+            {
+                id: 'prof-priya',
+                name: 'Dr. Priya Nair',
+                role: 'Professor • GenAI',
+                isHOD: false,
+                tag: 'ai',
+                accent: '#ff007f',
+                accentClass: 'neon-pink',
+                specialty: 'Generative AI, Diffusion & Neural Visuals',
+                credentials: 'Ph.D. Computational Learning, Stanford',
+                experience: '10 Yrs Teaching',
+                image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=800&q=85',
+                fallback: 'https://placehold.co/600x650/110d24/ff007f?text=Dr.+Priya+Nair',
+                email: 'p.nair@nexus-cs.edu',
+                hours: 'Tue & Fri • 11:00 AM – 1:00 PM',
+                room: 'Tensor Forge, Room 318',
+                bio: 'Dr. Nair demystifies transformers, diffusion models, and multimodal generative pipelines. In her studio, students train custom neural models from scratch to generate music, 3D geometry, and scientific simulations.',
+                courses: [
+                    { code: 'CS-230', title: 'Deep Learning & Transformer Architectures', time: 'Tue / Thu • 9:30 AM' },
+                    { code: 'CS-422', title: 'Generative Multimodal & Diffusion Lab', time: 'Friday • 1:00 PM' }
+                ],
+                honors: [
+                    'Provost’s Fellow for Interactive AI Education',
+                    '40+ publications on Low-Resource Multilingual & Multimodal Models',
+                    'Founder of the Campus Creative AI Hackathon'
+                ]
+            },
+            {
+                id: 'prof-david',
+                name: 'Prof. David Okafor',
+                role: 'Professor • 3D Tech',
+                isHOD: false,
+                tag: '3d-ux',
+                accent: '#ff6b00',
+                accentClass: 'neon-orange',
+                specialty: 'Creative Coding, WebGL Shaders & 3D Engines',
+                credentials: 'M.S. Graphics & Game Systems, Carnegie Mellon',
+                experience: '14 Yrs Studio & Teaching',
+                image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=85',
+                fallback: 'https://placehold.co/600x650/110d24/ff6b00?text=Prof.+David+Okafor',
+                email: 'd.okafor@nexus-cs.edu',
+                hours: 'Wed & Thu • 3:00 PM – 5:00 PM',
+                room: 'Polygon Foundry, Room 209',
+                bio: 'A veteran real-time graphics architect, Prof. Okafor teaches GLSL fragment shaders, WebGL/Three.js physics engines, and high-frequency cloud architectures. Every assignment ships as a playable, interactive 3D web experience.',
+                courses: [
+                    { code: 'CS-302', title: 'Real-Time 3D Graphics, WebGL & GLSL Shaders', time: 'Mon / Wed • 2:00 PM' },
+                    { code: 'CS-418', title: 'Cloud-Native Game & Simulation Engines', time: 'Friday • 10:00 AM' }
+                ],
+                honors: [
+                    'Architect of the Department’s Interactive WebGL Capstone Showcase',
+                    'Lead Graphics Advisor for 15+ Indie & Student Studio Launches',
+                    'Author of "Shaders Without Fear" interactive handbook'
+                ]
+            },
+            {
+                id: 'prof-claire',
+                name: 'Dr. Claire Lin',
+                role: 'Professor • Spatial UX',
+                isHOD: false,
+                tag: '3d-ux',
+                accent: '#9b5de5',
+                accentClass: 'neon-purple',
+                specialty: 'Human-AI Interaction & Spatial Computing',
+                credentials: 'Ph.D. Human-Centered Computing, Georgia Tech',
+                experience: '8 Yrs Teaching',
+                image: 'https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?auto=format&fit=crop&w=800&q=85',
+                fallback: 'https://placehold.co/600x650/110d24/9b5de5?text=Dr.+Claire+Lin',
+                email: 'c.lin@nexus-cs.edu',
+                hours: 'Mon & Thu • 11:00 AM – 1:00 PM',
+                room: 'Holo-Design Lab, Room 215',
+                bio: 'Dr. Lin explores how humans collaborate with intelligent 3D interfaces, AR/VR spatial canvases, and tactile kinetic typography. Her classes blend cognitive psychology with rapid interactive prototyping.',
+                courses: [
+                    { code: 'CS-250', title: 'Spatial Interfaces & Kinetic UX Design', time: 'Tue / Thu • 1:30 PM' },
+                    { code: 'CS-390', title: 'Human-AI Co-Creation & Accessibility Studio', time: 'Friday • 2:30 PM' }
+                ],
+                honors: [
+                    'ACM CHI Best Paper Award in Spatial Educational Interfaces',
+                    'Director of the Inclusive XR & Tactile Computing Lab',
+                    'Early Career Teaching Innovation Grant Recipient'
+                ]
+            }
+        ];
+
+        const scheduleData = [
+            { code: 'CS-204', title: 'Offensive Security & Capture-The-Flag Studio', id: 'prof-marcus', teacher: 'Dr. Marcus Thorne', isHOD: false, day: 'Mon / Wed', time: '09:00 AM – 10:30 AM', room: 'Cyber Bunker 101', color: '#00f5d4' },
+            { code: 'CS-401', title: 'Neuro-Symbolic AI & Autonomous Agents', id: 'hod-vance', teacher: 'Prof. Dr. Eleanor Vance', isHOD: true, day: 'Mon / Wed', time: '10:00 AM – 11:30 AM', room: 'Turing Spire Main', color: '#ccff00' },
+            { code: 'CS-302', title: 'Real-Time 3D Graphics, WebGL & GLSL Shaders', id: 'prof-david', teacher: 'Prof. David Okafor', isHOD: false, day: 'Mon / Wed', time: '02:00 PM – 03:30 PM', room: 'Polygon Foundry', color: '#ff6b00' },
+            { code: 'CS-230', title: 'Deep Learning & Transformer Architectures', id: 'prof-priya', teacher: 'Dr. Priya Nair', isHOD: false, day: 'Tue / Thu', time: '09:30 AM – 11:00 AM', room: 'Tensor Forge', color: '#ff007f' },
+            { code: 'CS-315', title: 'Zero-Knowledge Protocols & Distributed Systems', id: 'prof-marcus', teacher: 'Dr. Marcus Thorne', isHOD: false, day: 'Tue / Thu', time: '11:00 AM – 12:30 PM', room: 'Cyber Bunker 202', color: '#00f5d4' },
+            { code: 'CS-250', title: 'Spatial Interfaces & Kinetic UX Design', id: 'prof-claire', teacher: 'Dr. Claire Lin', isHOD: false, day: 'Tue / Thu', time: '01:30 PM – 03:00 PM', room: 'Holo-Design Lab', color: '#9b5de5' },
+            { code: 'CS-510', title: 'HOD Honors Research & Ethics Lab', id: 'hod-vance', teacher: 'Prof. Dr. Eleanor Vance', isHOD: true, day: 'Tue / Thu', time: '03:00 PM – 04:30 PM', room: 'Turing Suite 401', color: '#ccff00' },
+            { code: 'CS-418', title: 'Cloud-Native Game & Simulation Engines', id: 'prof-david', teacher: 'Prof. David Okafor', isHOD: false, day: 'Friday', time: '10:00 AM – 12:30 PM', room: 'Polygon Foundry', color: '#ff6b00' },
+            { code: 'CS-422', title: 'Generative Multimodal & Diffusion Lab', id: 'prof-priya', teacher: 'Dr. Priya Nair', isHOD: false, day: 'Friday', time: '01:00 PM – 03:30 PM', room: 'Tensor Forge', color: '#ff007f' },
+            { code: 'CS-390', title: 'Human-AI Co-Creation & Accessibility Studio', id: 'prof-claire', teacher: 'Dr. Claire Lin', isHOD: false, day: 'Friday', time: '02:30 PM – 04:30 PM', room: 'Holo-Design Lab', color: '#9b5de5' }
+        ];
+
+        /**
+         * 2. THREE.JS INTERACTIVE 3D WEBGL HERO UNIVERSE
+         */
+        let threeScene, threeCamera, threeRenderer, heroGroup, warpSpeed = 1;
+        const floatingMeshes = [];
+
+        function initThreeHero() {
+            const container = document.getElementById('three-hero-container');
+            if (!container || typeof THREE === 'undefined') return;
+
+            threeScene = new THREE.Scene();
+            threeCamera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 1000);
+            threeCamera.position.z = 26;
+
+            threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            threeRenderer.setSize(container.clientWidth, container.clientHeight);
+            threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(threeRenderer.domElement);
+
+            // Neon Lighting Rig
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+            threeScene.add(ambientLight);
+
+            const limeLight = new THREE.PointLight(0xccff00, 2.5, 60);
+            limeLight.position.set(14, 12, 16);
+            threeScene.add(limeLight);
+
+            const cyanLight = new THREE.PointLight(0x00f5d4, 2.5, 60);
+            cyanLight.position.set(-16, -10, 14);
+            threeScene.add(cyanLight);
+
+            const pinkLight = new THREE.PointLight(0xff007f, 2.2, 60);
+            pinkLight.position.set(0, 15, -10);
+            threeScene.add(pinkLight);
+
+            heroGroup = new THREE.Group();
+            threeScene.add(heroGroup);
+
+            // Central Giant Wireframe + Solid Core Knowledge Atom (Right side focus on desktop)
+            const coreGeo = new THREE.IcosahedronGeometry(4.4, 1);
+            const coreMat = new THREE.MeshStandardMaterial({
+                color: 0x161036,
+                emissive: 0x1e134d,
+                roughness: 0.2,
+                metalness: 0.85,
+                flatShading: true
+            });
+            const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+            coreMesh.position.set(6.5, 0, -2);
+            heroGroup.add(coreMesh);
+
+            const wireMat = new THREE.MeshBasicMaterial({
+                color: 0xccff00,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.45
+            });
+            const wireMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(4.75, 1), wireMat);
+            coreMesh.add(wireMesh);
+
+            // Orbital Rings around the Core
+            const ring1 = new THREE.Mesh(
+                new THREE.TorusGeometry(6.8, 0.08, 16, 100),
+                new THREE.MeshBasicMaterial({ color: 0x00f5d4, transparent: true, opacity: 0.7 })
+            );
+            ring1.rotation.x = Math.PI / 3;
+            coreMesh.add(ring1);
+
+            const ring2 = new THREE.Mesh(
+                new THREE.TorusGeometry(8.1, 0.06, 16, 100),
+                new THREE.MeshBasicMaterial({ color: 0xff007f, transparent: true, opacity: 0.65 })
+            );
+            ring2.rotation.y = Math.PI / 2.5;
+            coreMesh.add(ring2);
+
+            floatingMeshes.push({ mesh: coreMesh, rx: 0.004, ry: 0.007, baseY: 0, phase: 0 });
+
+            // 5 Orbiting Faculty Satellites (1 Gold/Lime HOD Node + 4 Teacher Polyhedra)
+            const satelliteConfigs = [
+                { color: 0xccff00, size: 1.15, geo: new THREE.OctahedronGeometry(1.15, 0), pos: [12, 5.5, 3] },   // HOD
+                { color: 0x00f5d4, size: 0.9, geo: new THREE.TetrahedronGeometry(1.0, 0), pos: [1.5, 6.5, 2] },   // Teacher 1
+                { color: 0xff007f, size: 0.95, geo: new THREE.DodecahedronGeometry(0.9, 0), pos: [13, -5, 2] },   // Teacher 2
+                { color: 0xff6b00, size: 0.9, geo: new THREE.TorusKnotGeometry(0.65, 0.22, 64, 12), pos: [-11, 4, -3] }, // Teacher 3
+                { color: 0x9b5de5, size: 0.95, geo: new THREE.BoxGeometry(1.3, 1.3, 1.3), pos: [-9, -5.5, 1] }    // Teacher 4
+            ];
+
+            satelliteConfigs.forEach((cfg, i) => {
+                const mat = new THREE.MeshStandardMaterial({
+                    color: cfg.color,
+                    emissive: cfg.color,
+                    emissiveIntensity: 0.25,
+                    roughness: 0.25,
+                    metalness: 0.7
+                });
+                const mesh = new THREE.Mesh(cfg.geo, mat);
+                mesh.position.set(...cfg.pos);
+                heroGroup.add(mesh);
+                floatingMeshes.push({
+                    mesh,
+                    rx: 0.01 + i * 0.002,
+                    ry: 0.012 + i * 0.002,
+                    baseY: cfg.pos[1],
+                    phase: i * 1.3
+                });
+            });
+
+            // Starfield / Cyber Knowledge Dust Particles
+            const starGeo = new THREE.BufferGeometry();
+            const starCount = 320;
+            const positions = new Float32Array(starCount * 3);
+            for (let i = 0; i < starCount * 3; i++) {
+                positions[i] = (Math.random() - 0.5) * 65;
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const starMat = new THREE.PointsMaterial({ color: 0x00f5d4, size: 0.16, transparent: true, opacity: 0.7 });
+            const starField = new THREE.Points(starGeo, starMat);
+            threeScene.add(starField);
+
+            // Mouse & Drag Interactive Parallax
+            let targetRotX = 0, targetRotY = 0;
+            let isDragging = false, prevX = 0, prevY = 0;
+
+            window.addEventListener('mousemove', (e) => {
+                const normX = (e.clientX / window.innerWidth) * 2 - 1;
+                const normY = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                if (isDragging) {
+                    const deltaX = e.clientX - prevX;
+                    const deltaY = e.clientY - prevY;
+                    heroGroup.rotation.y += deltaX * 0.006;
+                    heroGroup.rotation.x += deltaY * 0.006;
+                } else {
+                    targetRotY = normX * 0.35;
+                    targetRotX = -normY * 0.25;
+                }
+                prevX = e.clientX;
+                prevY = e.clientY;
+            });
+
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                prevX = e.clientX;
+                prevY = e.clientY;
+            });
+            window.addEventListener('mouseup', () => isDragging = false);
+
+            // Responsive Resize Handler
+            window.addEventListener('resize', () => {
+                if (!container) return;
+                threeCamera.aspect = container.clientWidth / container.clientHeight;
+                threeCamera.updateProjectionMatrix();
+                threeRenderer.setSize(container.clientWidth, container.clientHeight);
+            });
+
+            // Animation Loop
+            let clock = 0;
+            function animateThree() {
+                requestAnimationFrame(animateThree);
+                clock += 0.016 * warpSpeed;
+
+                if (!isDragging) {
+                    heroGroup.rotation.y += (targetRotY - heroGroup.rotation.y) * 0.04;
+                    heroGroup.rotation.x += (targetRotX - heroGroup.rotation.x) * 0.04;
+                }
+
+                floatingMeshes.forEach((item, idx) => {
+                    item.mesh.rotation.x += item.rx * warpSpeed;
+                    item.mesh.rotation.y += item.ry * warpSpeed;
+                    if (idx > 0) {
+                        item.mesh.position.y = item.baseY + Math.sin(clock + item.phase) * 0.65;
+                    }
+                });
+
+                starField.rotation.y += 0.0008 * warpSpeed;
+                threeRenderer.render(threeScene, threeCamera);
+            }
+            animateThree();
+        }
+
+        // Interactive 3D Warp Boost Button
+        function triggerThreeDBurst() {
+            warpSpeed = 9;
+            const btn = document.getElementById('boost-3d-btn');
+            btn.classList.add('border-neon-lime', 'text-neon-lime');
+            setTimeout(() => {
+                warpSpeed = 1;
+                btn.classList.remove('border-neon-lime', 'text-neon-lime');
+            }, 1300);
+        }
+
+        /**
+         * 3. REAL-TIME 3D PERSPECTIVE TILT ENGINE FOR CARDS
+         */
+        function attach3DTiltListeners() {
+            const cards = document.querySelectorAll('.tilt-card');
+            cards.forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    card.classList.remove('resetting');
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+
+                    const rotateX = ((y - centerY) / centerY) * -10;
+                    const rotateY = ((x - centerX) / centerX) * 10;
+
+                    card.style.transform = `perspective(1100px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.02, 1.02, 1.02)`;
+
+                    const glare = card.querySelector('.holo-glare');
+                    if (glare) {
+                        const glareX = (x / rect.width) * 100;
+                        const glareY = (y / rect.height) * 100;
+                        glare.style.setProperty('--glare-x', `${glareX}%`);
+                        glare.style.setProperty('--glare-y', `${glareY}%`);
+                    }
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    card.classList.add('resetting');
+                    card.style.transform = 'perspective(1100px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                });
+            });
+        }
+
+        /**
+         * 4. RENDER 3D TILT FACULTY GRID (1 HOD + 4 TEACHERS)
+         */
+        let currentFilter = 'all';
+        let currentSearch = '';
+
+        function renderFacultyGrid() {
+            const grid = document.getElementById('faculty-grid-view');
+            const emptyBox = document.getElementById('no-results-box');
+
+            const filtered = facultyData.filter(f => {
+                const matchFilter =
+                    currentFilter === 'all' ||
+                    (currentFilter === 'hod' && f.isHOD) ||
+                    (currentFilter === 'teachers' && !f.isHOD) ||
+                    f.tag === currentFilter;
+
+                const q = currentSearch.toLowerCase().trim();
+                const matchSearch = !q ||
+                    f.name.toLowerCase().includes(q) ||
+                    f.specialty.toLowerCase().includes(q) ||
+                    f.role.toLowerCase().includes(q) ||
+                    f.courses.some(c => c.title.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
+
+                return matchFilter && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyBox.classList.remove('hidden');
+                return;
+            }
+            emptyBox.classList.add('hidden');
+
+            grid.innerHTML = filtered.map(person => {
+                const badgeBg = person.isHOD ? 'bg-neon-lime text-obsidian' : 'bg-obsidian/85 text-white border border-white/20';
+                return `
+                    <article onclick="openFacultyModal('${person.id}')" class="tilt-card cursor-pointer cyber-glass rounded-3xl overflow-hidden flex flex-col justify-between group" style="border-color: ${person.accent}55;">
+                        <div class="holo-glare"></div>
+
+                        <div>
+                            <!-- Portrait Header -->
+                            <div class="relative h-64 overflow-hidden bg-obsidian">
+                                <img 
+                                    src="${person.image}" 
+                                    onerror="this.onerror=null;this.src='${person.fallback}';"
+                                    alt="${person.name}" 
+                                    class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                                >
+                                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/20 to-transparent"></div>
+
+                                <!-- Floating 3D Role Badge -->
+                                <div class="absolute top-4 left-4 tilt-layer-2">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl font-display font-extrabold text-[11px] uppercase tracking-wider shadow-lg ${badgeBg}">
+                                        ${person.isHOD ? '<i class="ph-fill ph-crown"></i>' : '<i class="ph-fill ph-lightning"></i>'}
+                                        ${person.role}
+                                    </span>
+                                </div>
+
+                                <!-- Name & Credentials Overlay -->
+                                <div class="absolute bottom-4 left-5 right-5 tilt-layer-1">
+                                    <h3 class="font-display text-xl sm:text-2xl font-extrabold text-white group-hover:text-neon-lime transition-colors">${person.name}</h3>
+                                    <p class="font-mono text-[11px] text-slate-300 mt-0.5 truncate">${person.credentials}</p>
+                                </div>
+                            </div>
+
+                            <!-- Card Content -->
+                            <div class="p-6 space-y-4 tilt-layer-1">
+                                <div>
+                                    <span class="font-mono text-[10px] uppercase tracking-wider block" style="color: ${person.accent};">// SPECIALIZATION</span>
+                                    <p class="font-bold text-sm text-white mt-0.5">${person.specialty}</p>
+                                </div>
+
+                                <p class="text-xs sm:text-sm text-slate-300 line-clamp-2 leading-relaxed">
+                                    ${person.bio}
+                                </p>
+
+                                <div class="flex flex-wrap gap-1.5 pt-1">
+                                    ${person.courses.map(c => `
+                                        <span class="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 font-mono text-[11px] text-slate-200">
+                                            <strong style="color: ${person.accent};">${c.code}</strong> ${c.title.split(' ').slice(0, 2).join(' ')}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="px-6 py-4 bg-obsidian/60 border-t border-white/10 flex items-center justify-between text-xs font-mono">
+                            <span class="text-slate-400">${person.experience}</span>
+                            <span class="font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform" style="color: ${person.accent};">
+                                INSPECT 3D <i class="ph-bold ph-arrow-right"></i>
+                            </span>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            attach3DTiltListeners();
+        }
+
+        /**
+         * 5. INTERACTIVE 3D ORBIT CAROUSEL STAGE (5 EDUCATORS IN 360° 3D RING)
+         */
+        let orbitIndex = 0;
+        let orbitAngle = 0;
+
+        function buildOrbitStage() {
+            const ring = document.getElementById('orbit-ring');
+            const total = facultyData.length; // 5 (1 HOD + 4 Teachers)
+            const step = 360 / total;
+            const radius = window.innerWidth < 640 ? 250 : 370;
+
+            ring.innerHTML = facultyData.map((person, idx) => {
+                const theta = idx * step;
+                return `
+                    <div 
+                        onclick="selectOrbitCard(${idx})"
+                        data-orbit-idx="${idx}"
+                        class="orbit-item cursor-pointer cyber-glass rounded-3xl overflow-hidden flex flex-col justify-between border-2"
+                        style="transform: rotateY(${theta}deg) translateZ(${radius}px); border-color: ${person.accent}88;"
+                    >
+                        <div class="relative h-56 bg-obsidian">
+                            <img src="${person.image}" onerror="this.src='${person.fallback}'" alt="${person.name}" class="w-full h-full object-cover object-top">
+                            <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-transparent"></div>
+                            <span class="absolute top-3 left-3 px-3 py-1 rounded-xl font-display font-extrabold text-[10px] uppercase ${person.isHOD ? 'bg-neon-lime text-obsidian' : 'bg-obsidian/85 text-white border border-white/20'}">
+                                ${person.role}
+                            </span>
+                            <div class="absolute bottom-3 left-4 right-4">
+                                <h4 class="font-display text-lg font-extrabold text-white leading-tight">${person.name}</h4>
+                                <span class="font-mono text-[10px]" style="color: ${person.accent};">${person.specialty}</span>
+                            </div>
+                        </div>
+                        <div class="p-4 flex flex-col justify-between flex-1 bg-obsidian/80">
+                            <p class="text-xs text-slate-300 line-clamp-3">${person.bio}</p>
+                            <button onclick="event.stopPropagation(); openFacultyModal('${person.id}')" class="mt-3 w-full py-2.5 rounded-xl font-display font-bold text-xs uppercase text-obsidian transition-transform hover:scale-[1.02]" style="background-color: ${person.accent};">
+                                Open Dossier
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            updateOrbitVisuals();
+        }
+
+        function rotateOrbit(dir) {
+            const total = facultyData.length;
+            orbitIndex = (orbitIndex + dir + total) % total;
+            orbitAngle -= dir * (360 / total);
+            updateOrbitVisuals();
+        }
+
+        function selectOrbitCard(targetIdx) {
+            const total = facultyData.length;
+            if (targetIdx === orbitIndex) {
+                openFacultyModal(facultyData[targetIdx].id);
+                return;
+            }
+            let diff = targetIdx - orbitIndex;
+            if (diff > total / 2) diff -= total;
+            if (diff < -total / 2) diff += total;
+            rotateOrbit(diff);
+        }
+
+        function updateOrbitVisuals() {
+            const ring = document.getElementById('orbit-ring');
+            ring.style.transform = `rotateY(${orbitAngle}deg)`;
+
+            const activePerson = facultyData[orbitIndex];
+            document.getElementById('orbit-center-name').textContent = `${activePerson.name} (${activePerson.role})`;
+
+            document.querySelectorAll('.orbit-item').forEach((el, idx) => {
+                if (idx === orbitIndex) {
+                    el.style.opacity = '1';
+                    el.style.filter = 'brightness(1.08)';
+                    el.style.boxShadow = `0 20px 50px -10px ${facultyData[idx].accent}55`;
+                } else {
+                    el.style.opacity = '0.58';
+                    el.style.filter = 'brightness(0.75)';
+                    el.style.boxShadow = 'none';
+                }
+            });
+        }
+
+        // Drag support on 3D Orbit Viewport
+        (function initOrbitDrag() {
+            const viewport = document.getElementById('orbit-viewport');
+            let startX = 0, dragging = false;
+
+            viewport.addEventListener('mousedown', (e) => { dragging = true; startX = e.clientX; });
+            window.addEventListener('mouseup', (e) => {
+                if (!dragging) return;
+                dragging = false;
+                const dx = e.clientX - startX;
+                if (Math.abs(dx) > 40) rotateOrbit(dx < 0 ? 1 : -1);
+            });
+
+            viewport.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+            viewport.addEventListener('touchend', (e) => {
+                const dx = e.changedTouches[0].clientX - startX;
+                if (Math.abs(dx) > 40) rotateOrbit(dx < 0 ? 1 : -1);
+            });
+        })();
+
+        // View Switcher (Grid vs Orbit)
+        function switchFacultyView(mode) {
+            const gridView = document.getElementById('faculty-grid-view');
+            const orbitView = document.getElementById('faculty-orbit-view');
+            const gridControls = document.getElementById('grid-controls');
+            const btnGrid = document.getElementById('btn-view-grid');
+            const btnOrbit = document.getElementById('btn-view-orbit');
+
+            if (mode === 'orbit') {
+                gridView.classList.add('hidden');
+                gridControls.classList.add('hidden');
+                document.getElementById('no-results-box').classList.add('hidden');
+                orbitView.classList.remove('hidden');
+
+                btnOrbit.classList.add('bg-neon-pink', 'text-white');
+                btnOrbit.classList.remove('text-slate-300');
+                btnGrid.classList.remove('bg-neon-cyan', 'text-obsidian');
+                btnGrid.classList.add('text-slate-300');
+
+                buildOrbitStage();
+            } else {
+                orbitView.classList.add('hidden');
+                gridView.classList.remove('hidden');
+                gridControls.classList.remove('hidden');
+
+                btnGrid.classList.add('bg-neon-cyan', 'text-obsidian');
+                btnGrid.classList.remove('text-slate-300');
+                btnOrbit.classList.remove('bg-neon-pink', 'text-white');
+                btnOrbit.classList.add('text-slate-300');
+
+                renderFacultyGrid();
+            }
+        }
+
+        /**
+         * 6. SCHEDULE RENDERER & FILTERING
+         */
+        let activeDayFilter = 'all';
+
+        function renderScheduleList() {
+            const list = document.getElementById('schedule-list');
+            const items = activeDayFilter === 'all'
+                ? scheduleData
+                : scheduleData.filter(s => s.day === activeDayFilter);
+
+            list.innerHTML = items.map((item, idx) => `
+                <div class="cyber-glass hover:border-white/30 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 group">
+                    <div class="flex items-start sm:items-center gap-4">
+                        <div class="px-3.5 py-2 rounded-xl font-mono font-bold text-xs sm:text-sm text-obsidian shrink-0" style="background-color: ${item.color};">
+                            ${item.code}
+                        </div>
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h4 class="font-display font-bold text-white text-base sm:text-lg group-hover:text-neon-lime transition-colors">${item.title}</h4>
+                                ${idx === 1 ? '<span class="px-2 py-0.5 rounded-full bg-neon-lime/20 border border-neon-lime text-neon-lime font-mono text-[10px] uppercase animate-pulse">● LIVE LAB</span>' : ''}
+                            </div>
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 font-mono text-xs text-slate-400">
+                                <button onclick="openFacultyModal('${item.id}')" class="hover:underline font-bold flex items-center gap-1" style="color: ${item.color};">
+                                    <i class="ph-fill ph-user"></i> ${item.teacher} ${item.isHOD ? '[HOD]' : ''}
+                                </button>
+                                <span>// ${item.room}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between md:justify-end gap-4 pt-3 md:pt-0 border-t md:border-t-0 border-white/10">
+                        <div class="md:text-right font-mono">
+                            <span class="text-xs font-bold block" style="color: ${item.color};">${item.day}</span>
+                            <span class="text-xs text-slate-200">${item.time}</span>
+                        </div>
+                        <button onclick="openFacultyModal('${item.id}')" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 font-mono text-xs text-white transition-colors shrink-0">
+                            Syllabus →
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterSchedule(day) {
+            activeDayFilter = day;
+            document.querySelectorAll('.sched-btn').forEach(btn => {
+                if (btn.getAttribute('data-day') === day) {
+                    btn.classList.add('active', 'bg-neon-pink', 'text-white', 'font-bold');
+                    btn.classList.remove('text-slate-300');
+                } else {
+                    btn.classList.remove('active', 'bg-neon-pink', 'text-white', 'font-bold');
+                    btn.classList.add('text-slate-300');
+                }
+            });
+            renderScheduleList();
+        }
+
+        // Filter Pills & Search Listeners
+        document.querySelectorAll('.filter-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                document.querySelectorAll('.filter-pill').forEach(p => {
+                    p.classList.remove('active', 'bg-neon-lime', 'text-obsidian', 'font-bold');
+                    p.classList.add('text-slate-300', 'hover:bg-white/10');
+                });
+                pill.classList.add('active', 'bg-neon-lime', 'text-obsidian', 'font-bold');
+                pill.classList.remove('text-slate-300', 'hover:bg-white/10');
+                currentFilter = pill.getAttribute('data-filter');
+                renderFacultyGrid();
+            });
+        });
+
+        document.getElementById('faculty-search-input').addEventListener('input', (e) => {
+            currentSearch = e.target.value;
+            renderFacultyGrid();
+        });
+
+        function resetAllFilters() {
+            currentFilter = 'all';
+            currentSearch = '';
+            document.getElementById('faculty-search-input').value = '';
+            document.querySelectorAll('.filter-pill').forEach((p, idx) => {
+                if (idx === 0) {
+                    p.classList.add('active', 'bg-neon-lime', 'text-obsidian', 'font-bold');
+                    p.classList.remove('text-slate-300');
+                } else {
+                    p.classList.remove('active', 'bg-neon-lime', 'text-obsidian', 'font-bold');
+                    p.classList.add('text-slate-300');
+                }
+            });
+            renderFacultyGrid();
+        }
+
+        /**
+         * 7. FACULTY DOSSIER & BOOKING MODALS + NEON CONFETTI BURST
+         */
+        let selectedEmail = '';
+
+        function openFacultyModal(id) {
+            const person = facultyData.find(f => f.id === id);
+            if (!person) return;
+
+            selectedEmail = person.email;
+            document.getElementById('email-copied-msg').classList.add('hidden');
+
+            const img = document.getElementById('modal-img');
+            img.src = person.image;
+            img.onerror = () => { img.src = person.fallback; };
+            img.style.borderColor = person.accent;
+
+            const badge = document.getElementById('modal-badge');
+            badge.textContent = person.role;
+            badge.style.backgroundColor = person.accent;
+            badge.style.color = '#080710';
+
+            document.getElementById('modal-exp').textContent = person.experience;
+            document.getElementById('modal-name').textContent = person.name;
+            document.getElementById('modal-creds').textContent = person.credentials;
+            document.getElementById('modal-bio').textContent = person.bio;
+            document.getElementById('modal-hours').textContent = person.hours;
+            document.getElementById('modal-room').textContent = person.room;
+            document.getElementById('modal-email').textContent = person.email;
+
+            document.getElementById('modal-courses').innerHTML = person.courses.map(c => `
+                <div class="p-3.5 rounded-2xl bg-obsidian/80 border border-white/10">
+                    <div class="flex items-center justify-between font-mono text-xs mb-1">
+                        <span style="color: ${person.accent};" class="font-bold">${c.code}</span>
+                        <span class="text-slate-400">${c.time}</span>
+                    </div>
+                    <p class="font-bold text-sm text-white">${c.title}</p>
+                </div>
+            `).join('');
+
+            document.getElementById('modal-honors').innerHTML = person.honors.map(h => `
+                <li class="flex items-start gap-2.5">
+                    <i class="ph-fill ph-sparkle text-base shrink-0 mt-0.5" style="color: ${person.accent};"></i>
+                    <span>${h}</span>
+                </li>
+            `).join('');
+
+            document.getElementById('modal-book-trigger').onclick = () => {
+                closeFacultyModal();
+                openBookingModal(person.name);
+            };
+
+            document.getElementById('faculty-modal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFacultyModal() {
+            document.getElementById('faculty-modal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function copyEmailAddress() {
+            const input = document.createElement('input');
+            input.value = selectedEmail;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+
+            const msg = document.getElementById('email-copied-msg');
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 2400);
+        }
+
+        function openBookingModal(prefillName = '') {
+            const select = document.getElementById('booking-select');
+            document.getElementById('booking-success').classList.add('hidden');
+            if (prefillName) {
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value.includes(prefillName)) {
+                        select.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            document.getElementById('booking-modal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeBookingModal() {
+            document.getElementById('booking-modal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function submitBookingForm(e) {
+            e.preventDefault();
+            const educator = document.getElementById('booking-select').value;
+            const student = document.getElementById('booking-student').value;
+            const slot = document.getElementById('booking-slot').value;
+
+            document.getElementById('booking-success-detail').textContent = `${student}, your 1:1 studio session with ${educator} on ${slot} is locked in.`;
+            document.getElementById('booking-success').classList.remove('hidden');
+
+            launchNeonConfetti();
+
+            setTimeout(() => {
+                e.target.reset();
+                closeBookingModal();
+            }, 2500);
+        }
+
+        // Neon Confetti Particle Burst
+        function launchNeonConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const colors = ['#ccff00', '#00f5d4', '#ff007f', '#ff6b00', '#9b5de5'];
+            const particles = Array.from({ length: 85 }, () => ({
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                vx: (Math.random() - 0.5) * 18,
+                vy: (Math.random() - 0.7) * 18,
+                size: Math.random() * 8 + 4,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                life: 1
+            }));
+
+            function frame() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+                particles.forEach(p => {
+                    if (p.life <= 0) return;
+                    alive = true;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.45;
+                    p.life -= 0.018;
+                    ctx.globalAlpha = Math.max(0, p.life);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                });
+                if (alive) requestAnimationFrame(frame);
+                else ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            frame();
+        }
+
+        // Magnetic Cursor Glow & Scroll Reveal Observer
+        document.addEventListener('mousemove', (e) => {
+            const glow = document.getElementById('cursor-glow');
+            if (glow) {
+                glow.style.left = `${e.clientX}px`;
+                glow.style.top = `${e.clientY}px`;
+            }
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target.id === 'faculty-modal') closeFacultyModal();
+            if (e.target.id === 'booking-modal') closeBookingModal();
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeFacultyModal();
+                closeBookingModal();
+            }
+        });
+
+        // Mobile Drawer
+        document.getElementById('mobile-menu-toggle').addEventListener('click', () => {
+            document.getElementById('mobile-drawer').classList.toggle('hidden');
+        });
+        document.querySelectorAll('.mobile-link').forEach(link => {
+            link.addEventListener('click', () => document.getElementById('mobile-drawer').classList.add('hidden'));
+        });
+
+        function initScrollReveals() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.reveal-3d').forEach(el => observer.observe(el));
+        }
+
+        // Boot Everything on Window Load
+        window.onload = function () {
+            initThreeHero();
+            renderFacultyGrid();
+            renderScheduleList();
+            attach3DTiltListeners();
+            initScrollReveals();
+        };
+    </script>
+</body>
+</html>
